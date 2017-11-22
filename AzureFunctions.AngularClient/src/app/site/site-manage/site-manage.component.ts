@@ -1,8 +1,8 @@
 import { BusyStateScopeManager } from './../../busy-state/busy-state-scope-manager';
 import { ScenarioService } from './../../shared/services/scenario/scenario.service';
 import { BroadcastService } from './../../shared/services/broadcast.service';
-import { Subscription as RxSubscription } from 'rxjs/Subscription';
-import { SiteTabIds, ScenarioIds } from './../../shared/models/constants';
+import { Subscription } from 'rxjs/Subscription';
+import { ScenarioIds, SiteTabIds } from './../../shared/models/constants';
 import { Component, Input, OnDestroy } from '@angular/core';
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
@@ -22,6 +22,8 @@ import { PortalService } from '../../shared/services/portal.service';
 import { Site } from '../../shared/models/arm/site';
 import { ArmObj } from '../../shared/models/arm/arm-obj';
 import { SiteDescriptor } from '../../shared/resourceDescriptors';
+import { ViewInfoComponent } from '../../shared/components/view-info-component';
+import { FunctionAppService } from '../../shared/services/function-app.service';
 
 @Component({
     selector: 'site-manage',
@@ -29,14 +31,12 @@ import { SiteDescriptor } from '../../shared/resourceDescriptors';
     styleUrls: ['./site-manage.component.scss'],
 })
 
-export class SiteManageComponent implements OnDestroy {
+export class SiteManageComponent extends ViewInfoComponent implements OnDestroy {
     public groups1: FeatureGroup[];
     public groups2: FeatureGroup[];
     public groups3: FeatureGroup[];
 
     public searchTerm = '';
-    public TabIds = SiteTabIds;
-
     public viewInfo: TreeViewInfo<SiteData>;
 
     private _viewInfoStream = new Subject<TreeViewInfo<any>>();
@@ -44,8 +44,6 @@ export class SiteManageComponent implements OnDestroy {
 
     private _hasSiteWritePermissionStream = new Subject<DisableInfo>();
     private _hasPlanReadPermissionStream = new Subject<DisableInfo>();
-
-    private _selectedFeatureSubscription: RxSubscription;
 
     private _busyManager: BusyStateScopeManager;
 
@@ -60,11 +58,16 @@ export class SiteManageComponent implements OnDestroy {
         private _cacheService: CacheService,
         private _translateService: TranslateService,
         private _broadcastService: BroadcastService,
-        private _scenarioService: ScenarioService) {
+        private _scenarioService: ScenarioService,
+        functionAppService: FunctionAppService) {
+        super('site-manage', functionAppService, _broadcastService);
 
         this._busyManager = new BusyStateScopeManager(_broadcastService, 'site-tabs');
 
-        this._viewInfoStream
+    }
+
+    setup(): Subscription {
+        return this.viewInfoEvents
             .switchMap(viewInfo => {
                 this._busyManager.setBusy();
                 this.viewInfo = viewInfo;
@@ -122,10 +125,7 @@ export class SiteManageComponent implements OnDestroy {
         this._busyManager.clearBusy();
         this._portalService.closeBlades();
         this._disposeGroups();
-        if (this._selectedFeatureSubscription) {
-            this._selectedFeatureSubscription.unsubscribe();
-            this._selectedFeatureSubscription = null;
-        }
+        super.ngOnDestroy();
     }
 
     private _disposeGroups() {
@@ -609,7 +609,7 @@ export class SiteManageComponent implements OnDestroy {
                 },
                 this._portalService),
 
-            // new NotImplementedFeature('Clone app', 'clone app', 'Info'),  // TODO: ellhamai - Need to implent
+            // new NotImplementedFeature('Clone app', 'clone app', 'Info'),  // TODO: [ehamai] - Need to implent
 
             new BladeFeature(
                 this._translateService.instant(PortalResources.feature_automationScriptName),
@@ -631,7 +631,7 @@ export class SiteManageComponent implements OnDestroy {
                 },
                 this._portalService),
 
-            // new NotImplementedFeature(  // TODO: ellhamai - Need to implement
+            // new NotImplementedFeature(  // TODO: [ehamai] - Need to implement
             //     'New support request',
             //     'support request',
             //     'Info'),

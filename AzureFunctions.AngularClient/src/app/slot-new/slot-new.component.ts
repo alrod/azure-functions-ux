@@ -1,5 +1,5 @@
+import { LogCategories } from './../shared/models/constants';
 import { DashboardType } from 'app/tree-view/models/dashboard-type';
-import { LogCategories } from 'app/shared/models/constants';
 import { LogService } from './../shared/services/log.service';
 import { Component, Injector, OnDestroy } from '@angular/core';
 import { Subject } from 'rxjs/Subject';
@@ -8,7 +8,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { TranslateService } from '@ngx-translate/core';
 import 'rxjs/add/operator/mergeMap';
 
-import { SiteService } from '../shared/services/slots.service';
+import { SlotsService } from '../shared/services/slots.service';
 import { SlotsNode } from '../tree-view/slots-node';
 import { TreeViewInfo } from '../tree-view/models/tree-view-info';
 import { GlobalStateService } from '../shared/services/global-state.service';
@@ -18,15 +18,16 @@ import { CacheService } from '../shared/services/cache.service';
 import { ArmObj } from '../shared/models/arm/arm-obj';
 import { Site } from '../shared/models/arm/site';
 import { PortalService } from '../shared/services/portal.service';
-import { Constants } from '../shared/models/constants';
 import { AppNode } from '../tree-view/app-node';
 import { RequiredValidator } from '../shared/validators/requiredValidator';
 import { PortalResources } from '../shared/models/portal-resources';
 import { SlotNameValidator } from '../shared/validators/slotNameValidator';
-import { BroadcastEvent } from '../shared/models/broadcast-event';
 import { ErrorIds } from '../shared/models/error-ids';
-import { ErrorType, ErrorEvent } from '../shared/models/error-event';
 import { AuthzService } from '../shared/services/authz.service';
+import { FunctionAppService } from 'app/shared/services/function-app.service';
+import { Subscription } from 'rxjs/Subscription';
+import { Constants } from 'app/shared/models/constants';
+import { BaseFunctionComponent } from '../shared/components/base-function-component';
 
 interface DataModel {
     writePermission: boolean;
@@ -41,7 +42,7 @@ interface DataModel {
     templateUrl: './slot-new.component.html',
     styleUrls: ['./slot-new.component.scss'],
 })
-export class SlotNewComponent implements OnDestroy {
+export class SlotNewComponent extends BaseFunctionComponent implements OnDestroy {
     public Resources = PortalResources;
     public slotOptinEnabled: boolean;
     public hasCreatePermissions: boolean;
@@ -57,41 +58,44 @@ export class SlotNewComponent implements OnDestroy {
     private _siteObj: ArmObj<Site>;
     private _ngUnsubscribe: Subject<void> = new Subject<void>();
 
-    constructor(fb: FormBuilder,
+    constructor(
+        private fb: FormBuilder,
         private _globalStateService: GlobalStateService,
         private _translateService: TranslateService,
-        private _broadcastService: BroadcastService,
+        broadcastService: BroadcastService,
         private _portalService: PortalService,
         private _aiService: AiService,
-        private _slotService: SiteService,
+        private _slotService: SlotsService,
         private _cacheService: CacheService,
         private _logService: LogService,
-        authZService: AuthzService,
-        injector: Injector) {
-        const validator = new RequiredValidator(this._translateService);
+        private _functionAppService: FunctionAppService,
+        private authZService: AuthzService,
+        private injector: Injector) {
+        super('slot-new', broadcastService, _functionAppService, () => _globalStateService.setBusyState(), DashboardType.CreateSlotDashboard);
+    }
 
-        this._broadcastService.getEvents<TreeViewInfo<any>>(BroadcastEvent.TreeNavigation)
-            .filter(info => info.dashboardType === DashboardType.CreateSlotDashboard)
-            .takeUntil(this._ngUnsubscribe)
+    setupNavigation(): Subscription {
+        return this.functionChangedEvents
             .switchMap(viewInfo => {
                 this._globalStateService.setBusyState();
                 this._slotsNode = <SlotsNode>viewInfo.node;
                 this._viewInfo = viewInfo;
+                const validator = new RequiredValidator(this._translateService);
 
                 // parse the site resourceId from slot's
                 this._siteId = viewInfo.resourceId.substring(0, viewInfo.resourceId.indexOf('/slots'));
-                const slotNameValidator = new SlotNameValidator(injector, this._siteId);
-                this.newSlotForm = fb.group({
+                const slotNameValidator = new SlotNameValidator(this.injector, this._siteId);
+                this.newSlotForm = this.fb.group({
                     name: [null,
                         validator.validate.bind(validator),
                         slotNameValidator.validate.bind(slotNameValidator)]
                 });
 
                 return Observable.zip<DataModel>(
-                    authZService.hasPermission(this._siteId, [AuthzService.writeScope]),
-                    authZService.hasReadOnlyLock(this._siteId),
+                    this.authZService.hasPermission(this._siteId, [AuthzService.writeScope]),
+                    this.authZService.hasReadOnlyLock(this._siteId),
                     this._cacheService.getArm(this._siteId),
-                    this._slotService.getSlotsList(this._siteId),
+                    this._functionAppService.getSlotsList(viewInfo.context),
                     (w, rl, s, l) => ({
                         writePermission: w,
                         readOnlyLock: rl,
@@ -169,14 +173,12 @@ export class SlotNewComponent implements OnDestroy {
                     notificationId,
                     false,
                     this._translateService.instant(PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName));
-                this._broadcastService.broadcast<ErrorEvent>(
-                    BroadcastEvent.Error, {
-                        message: this._translateService.instant(PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
-                        details: this._translateService.instant(PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
-                        errorId: ErrorIds.failedToCreateSlot,
-                        errorType: ErrorType.Fatal,
-                        resourceId: this._siteObj.id
-                    });
+                this.showComponentError({
+                    message: this._translateService.instant(PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
+                    details: this._translateService.instant(PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
+                    errorId: ErrorIds.failedToCreateSlot,
+                    resourceId: this._siteObj.id
+                });
                 this._aiService.trackEvent(ErrorIds.failedToCreateApp, { error: err, id: this._siteObj.id });
             });
     }

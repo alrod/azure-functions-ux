@@ -1,10 +1,5 @@
-import { Observable } from 'rxjs/Observable';
-import { FunctionAppContext, FunctionsService } from './../shared/services/functions-service';
-import { Site } from './../shared/models/arm/site';
-import { ArmObj } from './../shared/models/arm/arm-obj';
-import { SiteDescriptor } from 'app/shared/resourceDescriptors';
-import { CacheService } from 'app/shared/services/cache.service';
-import { Component, Input, OnDestroy, Injector } from '@angular/core';
+import { FunctionAppContext } from './../shared/function-app-context';
+import { Component, Input } from '@angular/core';
 import { Subject } from 'rxjs/Subject';
 import 'rxjs/add/operator/do';
 import 'rxjs/add/operator/retry';
@@ -13,27 +8,26 @@ import { TranslateService } from '@ngx-translate/core';
 
 import { AiService } from './../shared/services/ai.service';
 import { BroadcastService } from '../shared/services/broadcast.service';
-import { BroadcastEvent } from '../shared/models/broadcast-event';
 import { FunctionTemplate } from '../shared/models/function-template';
 import { FunctionInfo } from '../shared/models/function-info';
 import { PortalService } from '../shared/services/portal.service';
 import { BindingManager } from '../shared/models/binding-manager';
-import { ErrorEvent, ErrorType } from '../shared/models/error-event';
 import { GlobalStateService } from '../shared/services/global-state.service';
 import { PortalResources } from '../shared/models/portal-resources';
 import { ErrorIds } from '../shared/models/error-ids';
 import { FunctionsNode } from '../tree-view/functions-node';
-import { FunctionApp } from '../shared/function-app';
 import { TreeViewInfo } from '../tree-view/models/tree-view-info';
 import { DashboardType } from '../tree-view/models/dashboard-type';
+import { FunctionAppService } from 'app/shared/services/function-app.service';
+import { ViewInfoComponent } from 'app/shared/components/view-info-component';
+import { Subscription } from 'rxjs/Subscription';
 
 @Component({
     selector: 'function-quickstart',
     templateUrl: './function-quickstart.component.html',
     styleUrls: ['./function-quickstart.component.scss'],
-    inputs: ['viewInfoInput']
 })
-export class FunctionQuickstartComponent implements OnDestroy {
+export class FunctionQuickstartComponent extends ViewInfoComponent {
     @Input() functionsInfo: FunctionInfo[];
     private context: FunctionAppContext;
 
@@ -43,7 +37,6 @@ export class FunctionQuickstartComponent implements OnDestroy {
     showJavaSplashPage = false;
     setShowJavaSplashPage = new Subject<boolean>();
 
-    public functionApp: FunctionApp;
     private functionsNode: FunctionsNode;
     private _viewInfoStream = new Subject<TreeViewInfo<any>>();
 
@@ -52,34 +45,24 @@ export class FunctionQuickstartComponent implements OnDestroy {
         private _globalStateService: GlobalStateService,
         private _translateService: TranslateService,
         private _aiService: AiService,
-        private _cacheService: CacheService,
-        private _injector: Injector,
-        private _functionsService: FunctionsService) {
+        private _functionAppService: FunctionAppService) {
+        super('function-quickstart', _functionAppService, _broadcastService, () => _globalStateService.setBusyState());
 
         this.selectedFunction = 'HttpTrigger';
         this.selectedLanguage = 'CSharp';
 
-        this._viewInfoStream
-            .switchMap(viewInfo => {
-                this._globalStateService.setBusyState();
-                this.functionsNode = <FunctionsNode>viewInfo.node;
-                const descriptor = new SiteDescriptor(viewInfo.resourceId);
-                return Observable.zip(
-                    this._cacheService.getArm(descriptor.getTrimmedResourceId()),
-                    this._functionsService.getAppContext(descriptor.getTrimmedResourceId()),
-                    (s, c) =>({ siteResponse: s, context: c}))
-            })
+
+        this.setShowJavaSplashPage.subscribe(show => {
+            this.showJavaSplashPage = show;
+        });
+    }
+
+    setup(): Subscription {
+        return this.viewInfoEvents
+            .do(() => this._globalStateService.setBusyState())
             .switchMap(r => {
-                const site: ArmObj<Site> = r.siteResponse.json();
                 this.context = r.context;
-
-                if (this.functionApp) {
-                    this.functionApp.dispose();
-                }
-
-                this.functionApp = new FunctionApp(site, this._injector);
-
-                return this.functionApp.getFunctions();
+                return this._functionAppService.getFunctions(this.context);
             })
             .do(null, e => {
                 this._aiService.trackException(e, '/errors/function-quickstart');
@@ -88,23 +71,13 @@ export class FunctionQuickstartComponent implements OnDestroy {
             .retry()
             .subscribe(fcs => {
                 this._globalStateService.clearBusyState();
-                this.functionsInfo = fcs;
+                this.functionsInfo = fcs.result;
             });
-
-        this.setShowJavaSplashPage.subscribe(show => {
-            this.showJavaSplashPage = show;
-        });
     }
 
     set viewInfoInput(viewInfoInput: TreeViewInfo<any>) {
         this._viewInfoStream.next(viewInfoInput);
 
-    }
-
-    ngOnDestroy() {
-        if (this.functionApp) {
-            this.functionApp.dispose();
-        }
     }
 
     onFunctionClicked(selectedFunction: string) {
@@ -129,53 +102,48 @@ export class FunctionQuickstartComponent implements OnDestroy {
         if (this.selectedLanguage === 'Java') {
             this.setShowJavaSplashPage.next(true);
         }
-        this.functionApp.getTemplates().subscribe((templates) => {
-            const selectedTemplate: FunctionTemplate = templates.find((t) => {
-                return t.id === this.selectedFunction + '-' + this.selectedLanguage;
-            });
-
-            if (selectedTemplate) {
-                try {
-                    const functionName = BindingManager.getFunctionName(selectedTemplate.metadata.defaultFunctionName, this.functionsInfo);
-                    this._portalService.logAction('intro-create-from-template', 'creating', { template: selectedTemplate.id, name: functionName });
-
-                    this.bc.setDefaultValues(selectedTemplate.function.bindings, this._globalStateService.DefaultStorageAccount);
-
-                    this.functionApp.createFunctionV2(functionName, selectedTemplate.files, selectedTemplate.function)
-                        .subscribe(res => {
-                            this._portalService.logAction('intro-create-from-template', 'success', { template: selectedTemplate.id, name: functionName });
-                            res.context = this.context;
-                            this.functionsNode.addChild(res);
-                            // this._broadcastService.broadcast<TutorialEvent>(
-                            //    BroadcastEvent.TutorialStep,
-                            //    {
-                            //        functionInfo: res,
-                            //        step: TutorialStep.Waiting
-                            //    });
-                            //this._broadcastService.broadcast(BroadcastEvent.FunctionAdded, res);
-                            this._globalStateService.clearBusyState();
-                        },
-                        () => {
-                            this._globalStateService.clearBusyState();
-                        });
-                } catch (e) {
-                    this._broadcastService.broadcast<ErrorEvent>(BroadcastEvent.Error, {
-                        message: this._translateService.instant(PortalResources.functionCreateErrorMessage),
-                        details: this._translateService.instant(PortalResources.functionCreateErrorDetails, { error: JSON.stringify(e) }),
-                        errorId: ErrorIds.unableToCreateFunction,
-                        errorType: ErrorType.UserError,
-                        resourceId: this.functionApp.site.id
+        this._functionAppService.getTemplates(this.context)
+            .subscribe((templates) => {
+                if (templates.isSuccessful) {
+                    const selectedTemplate: FunctionTemplate = templates.result.find((t) => {
+                        return t.id === this.selectedFunction + '-' + this.selectedLanguage;
                     });
-                    this._aiService.trackEvent(ErrorIds.unableToCreateFunction, {
-                        exception: e
-                    });
-                    throw e;
+
+                    if (selectedTemplate) {
+                        try {
+                            const functionName = BindingManager.getFunctionName(selectedTemplate.metadata.defaultFunctionName, this.functionsInfo);
+                            this._portalService.logAction('intro-create-from-template', 'creating', { template: selectedTemplate.id, name: functionName });
+
+                            this.bc.setDefaultValues(selectedTemplate.function.bindings, this._globalStateService.DefaultStorageAccount);
+
+                            this._functionAppService.createFunctionV2(this.context, functionName, selectedTemplate.files, selectedTemplate.function)
+                                .subscribe(res => {
+                                    if (res.isSuccessful) {
+                                        this._portalService.logAction('intro-create-from-template', 'success', { template: selectedTemplate.id, name: functionName });
+                                        this.functionsNode.addChild(res.result);
+                                    }
+                                    this._globalStateService.clearBusyState();
+                                },
+                                () => {
+                                    this._globalStateService.clearBusyState();
+                                });
+                        } catch (e) {
+                            this.showComponentError({
+                                message: this._translateService.instant(PortalResources.functionCreateErrorDetails, { error: JSON.stringify(e) }),
+                                errorId: ErrorIds.unableToCreateFunction,
+                                resourceId: this.context.site.id
+                            });
+
+                            this._aiService.trackEvent(ErrorIds.unableToCreateFunction, {
+                                exception: e
+                            });
+                            throw e;
+                        }
+                    } else {
+                        this._globalStateService.clearBusyState();
+                    }
                 }
-            } else {
-                this._globalStateService.clearBusyState();
-            }
-
-        });
+            });
     }
 
     createFromScratch() {
@@ -187,8 +155,8 @@ export class FunctionQuickstartComponent implements OnDestroy {
         this._portalService.openBlade({
             detailBlade: 'ContinuousDeploymentListBlade',
             detailBladeInputs: {
-                id: this.functionApp.site.id,
-                ResourceId: this.functionApp.site.id
+                id: this.context.site.id,
+                ResourceId: this.context.site.id
             }
         },
             'intro');

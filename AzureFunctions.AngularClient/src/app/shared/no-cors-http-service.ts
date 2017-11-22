@@ -6,7 +6,7 @@ import 'rxjs/add/operator/catch';
 import 'rxjs/add/operator/mergeMap';
 
 import { AiService } from './services/ai.service';
-import { ErrorEvent, ErrorType } from './models/error-event';
+import { ErrorEvent } from './models/error-event';
 import { ErrorIds } from './models/error-ids';
 import { PortalResources } from './models/portal-resources';
 import { BroadcastService } from './services/broadcast.service';
@@ -114,7 +114,6 @@ export class NoCorsHttpService {
                         this._broadcastService.broadcast<ErrorEvent>(BroadcastEvent.Error, {
                             message: this._translateService.instant(PortalResources.error_appOffline),
                             errorId: ErrorIds.applicationOffline,
-                            errorType: ErrorType.Fatal,
                             resourceId: url
                         });
                         error.isHandled = true;

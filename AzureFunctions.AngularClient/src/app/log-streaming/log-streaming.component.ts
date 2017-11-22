@@ -1,16 +1,21 @@
-import { Component, OnDestroy, OnChanges, Input, Inject, ElementRef, Output, EventEmitter } from '@angular/core';
+import { BroadcastService } from './../shared/services/broadcast.service';
+import { Component, OnDestroy, Input, Inject, ElementRef, Output, EventEmitter } from '@angular/core';
 import { Subscription } from 'rxjs/Subscription';
 
 import { FunctionInfo } from '../shared/models/function-info';
 import { UserService } from '../shared/services/user.service';
 import { UtilitiesService } from '../shared/services/utilities.service';
+import { ViewInfoComponent } from 'app/shared/components/view-info-component';
+import { FunctionAppService } from 'app/shared/services/function-app.service';
+import { FunctionAppContext } from 'app/shared/function-app-context';
+import { GlobalStateService } from 'app/shared/services/global-state.service';
 
 @Component({
     selector: 'log-streaming',
     templateUrl: './log-streaming.component.html',
     styleUrls: ['./log-streaming.component.scss', '../function-dev/function-dev.component.scss']
 })
-export class LogStreamingComponent implements OnDestroy, OnChanges {
+export class LogStreamingComponent extends ViewInfoComponent implements OnDestroy {
     public log: string;
     public stopped: boolean;
     public timerInterval = 1000;
@@ -22,7 +27,8 @@ export class LogStreamingComponent implements OnDestroy, OnChanges {
     private token: string;
     private tokenSubscription: Subscription;
     private skipLength = 0;
-    @Input() functionInfo: FunctionInfo;
+    private context: FunctionAppContext;
+    private functionInfo: FunctionInfo;
     @Input() isHttpLogs: boolean;
     @Output() closeClicked = new EventEmitter<any>();
     @Output() expandClicked = new EventEmitter<boolean>();
@@ -30,15 +36,24 @@ export class LogStreamingComponent implements OnDestroy, OnChanges {
     constructor(
         @Inject(ElementRef) private _elementRef: ElementRef,
         private _userService: UserService,
-        private _utilities: UtilitiesService) {
+        private _functionAppService: FunctionAppService,
+        private _globalStateService: GlobalStateService,
+        private _utilities: UtilitiesService,
+        broadcastService: BroadcastService) {
+        super('log-streaming', _functionAppService, broadcastService);
         this.tokenSubscription = this._userService.getStartupInfo().subscribe(s => this.token = s.token);
         this.log = '';
         this.timeouts = [];
     }
 
-    ngOnChanges() {
-        this.initLogs(this.isHttpLogs);
-        this.startLogs();
+    setup(): Subscription {
+        return this.viewInfoEvents
+            .subscribe(view => {
+                this.context = view.context;
+                this.functionInfo = view.functionInfo.result;
+                this.initLogs(this.isHttpLogs);
+                this.startLogs();
+            });
     }
 
     ngOnDestroy() {
@@ -51,6 +66,7 @@ export class LogStreamingComponent implements OnDestroy, OnChanges {
             this.tokenSubscription.unsubscribe();
             delete this.tokenSubscription;
         }
+        super.ngOnDestroy();
     }
 
     startLogs() {
@@ -71,7 +87,7 @@ export class LogStreamingComponent implements OnDestroy, OnChanges {
     }
 
     handleKeyPress(e: KeyboardEvent) {
-        if ((e.which === 65 || e.keyCode == 65) && (e.ctrlKey || e.metaKey)) {
+        if ((e.which === 65 || e.keyCode === 65) && (e.ctrlKey || e.metaKey)) {
             e.preventDefault();
             this._utilities.highlightText(this._elementRef.nativeElement.querySelector('pre'));
         }
@@ -90,7 +106,6 @@ export class LogStreamingComponent implements OnDestroy, OnChanges {
         this.isExpanded = false;
         this.expandClicked.emit(false);
     }
-
 
     private initLogs(createEmpty: boolean = true, log?: string) {
         const maxCharactersInLog = 500000;
@@ -114,21 +129,22 @@ export class LogStreamingComponent implements OnDestroy, OnChanges {
                 }
             }
 
-            const scmUrl = this.functionInfo.functionApp.getScmUrl();
+            const scmUrl = this.context.scmUrl;
 
             this.xhReq = new XMLHttpRequest();
             const url = `${scmUrl}/api/logstream/application/functions/function/${this.functionInfo.name}`;
 
             this.xhReq.open('GET', url, true);
-            if (this.functionInfo.functionApp.tryFunctionsScmCreds) {
-                this.xhReq.setRequestHeader('Authorization', `Basic ${this.functionInfo.functionApp.tryFunctionsScmCreds}`);
+            if (this._globalStateService.showTryView) {
+                // TODO: [ahmels] Fix token
+                this.xhReq.setRequestHeader('Authorization', `Basic ${this._globalStateService.showTryView}`);
             } else {
                 this.xhReq.setRequestHeader('Authorization', `Bearer ${this.token}`);
             }
             this.xhReq.setRequestHeader('FunctionsPortal', '1');
             this.xhReq.send(null);
             if (!createEmpty) {
-                this.functionInfo.functionApp.getOldLogs(this.functionInfo, 10000).subscribe(r => oldLogs = r);
+                this._functionAppService.getOldLogs(this.context, this.functionInfo, 10000).subscribe(r => oldLogs = r.result);
             }
 
             const callBack = () => {

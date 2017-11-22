@@ -144,7 +144,6 @@ export class CacheService {
                 .map(response => {
                     return this._mapAndCacheResponse(method, response, key);
                 })
-                .share()
                 .catch(error => {
                     if (error.status === 304) {
                         this._cache[key] = this.createCacheItem(
@@ -158,7 +157,8 @@ export class CacheService {
                     } else {
                         return Observable.throw(error);
                     }
-                });
+                })
+                .share();
 
             this._cache[key] = this.createCacheItem(
                 key,

@@ -50,14 +50,12 @@ export class SiteDashboardComponent implements OnDestroy, OnInit {
     public dynamicTabIds: (string | null)[] = [null, null];
     public site: ArmObj<Site>;
     public viewInfoStream: Subject<TreeViewInfo<SiteData>>;
-    public TabIds = SiteTabIds;
     public Resources = PortalResources;
 
     private _currentTabId: string;
     private _prevTabId: string;
     private _currentTabIndex: number;
 
-    private _tabsLoaded = false;
     private _ngUnsubscribe: Subject<void> = new Subject<void>();
     private _openTabSubscription: Subscription;
 
@@ -222,7 +220,6 @@ export class SiteDashboardComponent implements OnDestroy, OnInit {
         this.viewInfo.data.siteTabFullReadyTraceKey = this._aiService.startTrace();
 
         this._prevTabId = this._currentTabId;
-        this._tabsLoaded = true;
         this._currentTabId = info.id;
         this._currentTabIndex = this.tabInfos.findIndex(i => i.id === info.id);
     }
@@ -286,7 +283,7 @@ export class SiteDashboardComponent implements OnDestroy, OnInit {
             iconUrl: null,
             dirty: false,
             componentFactory: null,
-            componentInput: input ? input : {}
+            componentInput: input ? Object.assign({}, input, { viewInfo: input.viewInfoInput, viewInfoComponent_viewInfo: input.viewInfoInput }) : {}
         };
 
         switch (tabId) {

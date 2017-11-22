@@ -1,4 +1,6 @@
 export class ErrorIds {
+    static functionNotFound: any;
+
     public static unableToRetrieveFileContent = '/errors/UnableToRetrieveFileContent';
     public static deserializingKudusFunctionList = '/errors/deserializingKudusFunctionList';
     public static unableToRetrieveFunctionsList = '/errors/unableToRetrieveFunctionsList';

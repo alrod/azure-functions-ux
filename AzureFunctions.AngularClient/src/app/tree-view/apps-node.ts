@@ -2,7 +2,7 @@ import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
 import { ErrorIds } from './../shared/models/error-ids';
 import { PortalResources } from './../shared/models/portal-resources';
-import { Arm, LogCategories, ScenarioIds } from './../shared/models/constants';
+import { LogCategories, ScenarioIds, Arm } from './../shared/models/constants';
 import { Subscription } from './../shared/models/subscription';
 import { ArmObj, ArmArrayResult } from './../shared/models/arm/arm-obj';
 import { TreeNode, MutableCollection, Disposable, Refreshable } from './tree-node';
@@ -11,7 +11,7 @@ import { DashboardType } from './models/dashboard-type';
 import { Site } from '../shared/models/arm/site';
 import { AppNode } from './app-node';
 import { BroadcastEvent } from '../shared/models/broadcast-event';
-import { ErrorEvent, ErrorType } from '../shared/models/error-event';
+import { ErrorEvent } from '../shared/models/error-event';
 import { ArmUtil } from 'app/shared/Utilities/arm-utils';
 import { UserService } from '../shared/services/user.service';
 import { ScenarioService } from '../shared/services/scenario/scenario.service';
@@ -22,7 +22,6 @@ interface SearchInfo {
     searchTerm: string;
     subscriptions: Subscription[];
 }
-
 
 export class AppsNode extends TreeNode implements MutableCollection, Disposable, Refreshable {
     public title = this.sideNav.translateService.instant(PortalResources.functionApps);
@@ -53,7 +52,7 @@ export class AppsNode extends TreeNode implements MutableCollection, Disposable,
         super(sideNav, null, rootNode, '/apps/new/app');
 
         this._subInitialized = false;
-        this.newDashboardType =  null;
+        this.newDashboardType = null;
         this._userService = sideNav.injector.get(UserService);
         this._scenarioService = sideNav.injector.get(ScenarioService);
 
@@ -169,7 +168,7 @@ export class AppsNode extends TreeNode implements MutableCollection, Disposable,
                         // recreated.  In that case, we'll just refocus on the root node.  It's probably
                         // not ideal but simple for us to do.
                         this.treeView.setFocus(this);
-                    } else{
+                    } else {
                         this.supportsRefresh = true;
                     }
 
@@ -214,7 +213,7 @@ export class AppsNode extends TreeNode implements MutableCollection, Disposable,
         return Observable.of(null);
     }
 
-    private _initialized(){
+    private _initialized() {
         return this._subInitialized && this._searchTerm !== undefined;
     }
 
@@ -254,9 +253,9 @@ export class AppsNode extends TreeNode implements MutableCollection, Disposable,
                     message: err.message,
                     details: err.code,
                     errorId: ErrorIds.failedToQueryArmResource,
-                    errorType: ErrorType.ApiError,
                     resourceId: 'none'
                 });
+
                 return Observable.of(null);
             })
             .switchMap(r => {
