@@ -36,7 +36,7 @@ gulp.task('build-test', function(cb) {
 });
 
 gulp.task('build-production', function(cb) {
-    runSequence('build-all', 'bundle-views', 'bundle-json', 'bundle-config', cb);
+    runSequence('build-all', 'tsc-prod', 'bundle-views', 'bundle-json', 'bundle-config', cb);
 });
 /********
  *   In the process of building resources, intermediate folders are created for processing, this cleans them up at the end of the process
@@ -56,7 +56,7 @@ gulp.task('resources-clean', function() {
  *   Bundle Up production server views
  */
 gulp.task('bundle-views', function() {
-    return gulp.src(['src/**/*.pug', 'src/**/*.css']).pipe(gulp.dest('build/src' ));
+    return gulp.src(['src/**/*.pug', 'src/**/*.css']).pipe(gulp.dest('build/src'));
 });
 
 /********
@@ -71,6 +71,28 @@ gulp.task('bundle-json', function() {
  */
 gulp.task('bundle-config', function() {
     return gulp.src(['web.config', 'iisnode.yml', 'package.json']).pipe(gulp.dest('build'));
+});
+
+/********
+ *   compile typescript for production
+ */
+gulp.task('tsc-prod', function() {
+    return gulp
+        .src(['src/**/*.ts'])
+        .pipe(
+            typescript({
+                sourceMap: false,
+                outDir: 'build',
+                tscPath: path.join(__dirname, 'node_modules', '.bin', 'tsc'),
+                moduleResolution: 'node',
+                noImplicitReturns: false,
+                noUnusedParameters: false,
+                noUnusedLocals: false,
+                module: 'commonjs',
+                target: 'ES6'
+            })
+        )
+        .pipe(gulp.dest('build/'));
 });
 
 /********
