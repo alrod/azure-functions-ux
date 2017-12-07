@@ -50,35 +50,30 @@ namespace Deploy
             const string deploymentSource = @"D:\home\site\repository";
             const string deploymentTarget = @"D:\home\site\wwwroot";
             var deploymentTempTarget = GetTempFolder();
-            const string toolsDirectory = @"D:\home\tools";
+            const string toolsDirectory = $@"D:\home\tools";
             const string ng = @"node_modules\.bin\ng";
             var yarn = Path.Combine(toolsDirectory, "yarn");
             var gulp = Path.Combine(toolsDirectory, "gulp");
             //var tsc =  @"node_modules\.bin\tsc";
             var assets = Path.Combine(deploymentSource, @"AzureFunctions.AngularClient\src\assets");
 
-            TryCreateDirectory($@"{deploymentTempTarget}");
-            TryCreateDirectory($@"{deploymentTempTarget}\ng-min");
-            TryCreateDirectory($@"{deploymentTempTarget}\ng-full");
-            TryCreateDirectory($@"{deploymentTempTarget}\node_modules");
-
             DeploySdk
                 .StandardDeployment
                 .Call("npm", $"config set prefix {toolsDirectory}")
                 .Call("npm", "install -g yarn")
                 .Call("npm", "install -g gulp")
-                .CopyDirectory($@"{deploymentSource}\server", $@"{deploymentTempTarget}\serverRepo")
-                .ChangeDirectory($@"{deploymentTempTarget}\serverRepo")
+                .CopyDirectory($@"{deploymentSource}", $@"{deploymentTempTarget}\Repo")
+                .ChangeDirectory($@"{deploymentTempTarget}\Repo\server")
                 .Call(yarn, "install", tries: 2)
-                .Call(gulp, "build-production", tries: 2)
-                .CopyDirectory($@"{deploymentTempTarget}\serverRepo\build",  $@"{deploymentTempTarget}\server")
-                .ChangeDirectory($@"{deploymentSource}\AzureFunctions.AngularClient")
+                .Call(gulp, "build-production", tries: 2) 
+                .CopyDirectory($@"{deploymentTempTarget}\Repo\server\build",  $@"{deploymentTempTarget}\bin")
+                .ChangeDirectory($@"{deploymentTempTarget}\Repo\AzureFunctions.AngularClient")
                 .Call(yarn, "install", tries: 2)
                 .Call("npm", "rebuild node-sass")
                 .CleanAngularArtifacts()
-                .Call(ng, $"build --progress false --prod --environment=prod --output-path=\"{deploymentTempTarget}\\server\\ng-min\"", tries: 2)
-                .Call(ng, $"build --progress false --output-path=\"{deploymentTempTarget}\\server\\ng-full\"", tries: 2)
-                .CopyDirectory($@"{deploymentTempTarget}\server", $@"{deploymentTarget}")
+                .Call(ng, $"build --progress false --prod --environment=prod --output-path=\"{deploymentTempTarget}\\bin\\ng-min\"", tries: 2)
+                .Call(ng, $"build --progress false --output-path=\"{deploymentTempTarget}\\bin\\ng-full\"", tries: 2)
+                .CopyDirectory($@"{deploymentTempTarget}\bin", $@"{deploymentTarget}")
                 .CopyFile($@"{assets}\googlecdaac16e0f037ee3.html", $@"{deploymentTarget}\googlecdaac16e0f037ee3.html")
                 .CopyDirectory($@"{assets}\schemas", $@"{deploymentTarget}\schemas")
                 .ChangeDirectory(deploymentTarget)
