@@ -1,9 +1,9 @@
 const gulp = require('gulp');
-var resxConverter = require('gulp-resx-convert');
+const resx2 = require('gulp-resx2');
 const rename = require('gulp-rename');
 const gulpMerge = require('merge-stream');
 const jeditor = require('gulp-json-editor');
-const runSequence = require('run-sequence');
+const runSequence = require('run-sequence').use(gulp);
 const fs = require('fs');
 const path = require('path');
 const merge = require('gulp-merge-json');
@@ -15,33 +15,29 @@ var typescript = require('gulp-tsc');
 /********
  *   This is the task that is actually run in the cli, it will run the other tasks in the appropriate order
  */
-gulp.task('build-all', function(cb) {
-    runSequence(
-        'resources-clean',
-        'download-templates',
-        'unzip-templates',
-        'resources-convert',
-        'resources-build',
-        'resources-combine',
-        'build-templates',
-        'build-bindings',
-        'resx-to-typescript-models',
-        'resources-clean',
-        cb
-    );
-});
+var buildAll = gulp.series(
+    clean,
+    downloadTemplates,
+    unzipTemplates,
+    resourcesConvert,
+    resourcesBuild,
+    resourcesCombine,
+    buildTemplates,
+    buildBindings,
+    resxToTypescript,
+    clean
+);
+gulp.task('build-all', buildAll);
 
-gulp.task('build-test', function(cb) {
-    runSequence('resources-convert', 'resources-build', 'resources-combine', 'build-templates', 'build-bindings', cb);
-});
+var buildTest = gulp.series(resourcesConvert, resourcesBuild, resourcesCombine, buildTemplates, buildBindings);
+gulp.task('build-test', buildTest);
 
-gulp.task('build-production', function(cb) {
-    runSequence('build-all', 'tsc-prod', 'bundle-views', 'bundle-json', 'bundle-config', cb);
-});
+var buildProd = gulp.series(buildAll, gulp.parallel(tscProd, bundleViews, bundleJson, bundleConfig));
+gulp.task('build-production', buildProd);
 /********
  *   In the process of building resources, intermediate folders are created for processing, this cleans them up at the end of the process
  */
-gulp.task('resources-clean', function() {
+function clean() {
     return del([
         'template-downloads',
         'Templates',
@@ -50,33 +46,55 @@ gulp.task('resources-clean', function() {
         'resources-build',
         'templateresources-build'
     ]);
-});
+}
+gulp.task('resources-clean', clean);
+
+/********
+ *   This will make the portal-resources.ts file
+ */
+function resxToTypescript(cb) {
+    const resources = require('../server/src/actions/resources/Resources.json').en;
+    let typescriptFileContent = '// This file is auto generated\r\n    export class PortalResources\r\n{\r\n';
+    Object.keys(resources).forEach(function(stringName) {
+        typescriptFileContent += `    public static ${stringName}: string = "${stringName}";\r\n`;
+    });
+    typescriptFileContent += `}`;
+    let writePath = path.normalize(
+        path.join(__dirname, '..', 'AzureFunctions.AngularClient', 'src', 'app', 'shared', 'models', 'portal-resources.ts')
+    );
+    fs.writeFileSync(writePath, new Buffer(typescriptFileContent));
+    cb()
+}
+gulp.task('resx-to-typescript-models', resxToTypescript);
 
 /********
  *   Bundle Up production server views
  */
-gulp.task('bundle-views', function() {
+function bundleViews() {
     return gulp.src(['src/**/*.pug', 'src/**/*.css']).pipe(gulp.dest('build'));
-});
+}
+gulp.task('bundle-views', bundleViews);
 
 /********
  *   Bundle Up production server resources
  */
-gulp.task('bundle-json', function() {
+function bundleJson() {
     return gulp.src(['src/**/*.json']).pipe(gulp.dest('build'));
-});
+}
+gulp.task('bundle-json', bundleJson);
 
 /********
  *   Bundle Up config
  */
-gulp.task('bundle-config', function() {
+function bundleConfig() {
     return gulp.src(['web.config', 'iisnode.yml', 'package.json']).pipe(gulp.dest('build'));
-});
+}
+gulp.task('bundle-config', bundleConfig);
 
 /********
  *   compile typescript for production
  */
-gulp.task('tsc-prod', function() {
+function tscProd() {
     return gulp
         .src(['src/**/*.ts'])
         .pipe(
@@ -93,36 +111,17 @@ gulp.task('tsc-prod', function() {
             })
         )
         .pipe(gulp.dest('build/'));
-});
-
-/********
- *   This will make the portal-resources.ts file
- */
-gulp.task('resx-to-typescript-models', function() {
-    const resources = require('../server/src/actions/resources/Resources.json').en;
-    let typescriptFileContent = '// This file is auto generated\r\n    export class PortalResources\r\n{\r\n';
-    Object.keys(resources).forEach(function(stringName) {
-        typescriptFileContent += `    public static ${stringName}: string = "${stringName}";\r\n`;
-    });
-    typescriptFileContent += `}`;
-    let writePath = path.normalize(
-        path.join(__dirname, '..', 'AzureFunctions.AngularClient', 'src', 'app', 'shared', 'models', 'portal-resources.ts')
-    );
-    fs.writeFileSync(writePath, new Buffer(typescriptFileContent));
-});
+}
+gulp.task('tsc-prod', tscProd);
 
 /********
  *   This task takes the Resource Resx files from both templates folder and Portal Resources Folder and converts them to json, it drops them into a intermediate 'convert' folder.
  *   Also it will change the file name format to Resources.<language code>.json
  */
-gulp.task('resources-convert', function() {
+function resourcesConvert() {
     const portalResourceStream = gulp
         .src(['../AzureFunctions/ResourcesPortal/**/Resources.resx'])
-        .pipe(
-            resxConverter.convert({
-                json: {}
-            })
-        )
+        .pipe(resx2())
         .pipe(
             rename(function(p) {
                 const language = p.dirname.split(path.sep)[0];
@@ -137,11 +136,7 @@ gulp.task('resources-convert', function() {
 
     const templateResourceStream = gulp
         .src(['templates/**/Resources/**/Resources.resx'])
-        .pipe(
-            resxConverter.convert({
-                json: {}
-            })
-        )
+        .pipe(resx2())
         .pipe(
             rename(function(p) {
                 const parts = p.dirname.split(path.sep);
@@ -157,12 +152,13 @@ gulp.task('resources-convert', function() {
         )
         .pipe(gulp.dest('templateResoureces-convert'));
     return gulpMerge(portalResourceStream, templateResourceStream);
-});
+}
+gulp.task('resources-convert', resourcesConvert);
 
 /********
  *   This is the task takes the output of the  convert task and formats the json to be in the format that gets sent back to the client by the API, it's easier to do this here than at the end
  */
-gulp.task('resources-build', function() {
+function resourcesBuild() {
     const streams = [];
     streams.push(
         gulp
@@ -232,7 +228,8 @@ gulp.task('resources-build', function() {
         );
     });
     return gulpMerge(streams);
-});
+}
+gulp.task('resources-build', resourcesBuild);
 
 /*************
  * Resources Combining
@@ -246,8 +243,7 @@ const files = [];
 const parentFolders = [];
 let streams = [];
 const baseNames = [];
-
-gulp.task('resources-combine', function() {
+function resourcesCombine() {
     const TemplateVersionDirectories = getSubDirectories('templateresources-build');
     const s = [];
     TemplateVersionDirectories.forEach(x => {
@@ -279,7 +275,8 @@ gulp.task('resources-combine', function() {
     s.push(gulp.src('resources-build/*.json').pipe(gulp.dest('src/actions/resources')));
 
     return gulpMerge(s);
-});
+}
+gulp.task('resources-combine', resourcesCombine);
 
 function makeStreams() {
     files.forEach(function(file) {
@@ -307,8 +304,7 @@ function makeStreams() {
 /***********************************************************
  * Templates Building
  */
-
-gulp.task('build-templates', function() {
+function buildTemplates(cb) {
     const templateRuntimeVersions = getSubDirectories('Templates');
     templateRuntimeVersions.forEach(version => {
         let templateListJson = [];
@@ -333,13 +329,14 @@ gulp.task('build-templates', function() {
         writePath = path.join(writePath, version + '.json');
         fs.writeFileSync(writePath, new Buffer(JSON.stringify(templateListJson)));
     });
-});
+    cb();
+}
+gulp.task('build-templates', buildTemplates);
 
 /********
  * Place Binding Templates
  */
-
-gulp.task('build-bindings', function() {
+function buildBindings(cb) {
     const templateRuntimeVersions = getSubDirectories('Templates');
     templateRuntimeVersions.forEach(version => {
         const bindingFile = require(path.join(__dirname, 'Templates', version, 'Bindings', 'bindings.json'));
@@ -361,7 +358,9 @@ gulp.task('build-bindings', function() {
         writePath = path.join(writePath, version + '.json');
         fs.writeFileSync(writePath, new Buffer(JSON.stringify(bindingFile)));
     });
-});
+    cb();
+}
+gulp.task('build-bindings', buildBindings);
 
 const templateVersionMap = {
     default: '1.0.3.10141',
@@ -372,7 +371,7 @@ const templateVersionMap = {
 /*****
  * Download and unzip nuget packages with templates
  */
-gulp.task('download-templates', function() {
+function downloadTemplates() {
     const mygetUrl = 'https://www.myget.org/F/azure-appservice/api/v2/package/Azure.Functions.Ux.Templates/';
     const templateLocations = Object.keys(templateVersionMap);
     let streams = [];
@@ -380,9 +379,10 @@ gulp.task('download-templates', function() {
         streams.push(download(mygetUrl + templateVersionMap[tempLoc]).pipe(gulp.dest('template-downloads/' + tempLoc)));
     });
     return gulpMerge(streams);
-});
+}
+gulp.task('download-templates', downloadTemplates);
 
-gulp.task('unzip-templates', function() {
+function unzipTemplates() {
     const versions = getSubDirectories('template-downloads');
 
     let streams = [];
@@ -395,7 +395,8 @@ gulp.task('unzip-templates', function() {
         );
     });
     return gulpMerge(streams);
-});
+}
+gulp.task('unzip-templates', unzipTemplates);
 
 /********
  * UTILITIES
