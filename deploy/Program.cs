@@ -63,6 +63,8 @@ namespace Deploy
                 .Call("npm", "install -g yarn")
                 .Call("npm", "install -g gulp")
                 .Call("npm", "install -g typescript")
+                .ChangeDirectory($@"{deploymentSource}")
+                .Call("git", "clean -xfd", tries: 2)
                 .CopyDirectory($@"{deploymentSource}\server", $@"{deploymentTempTarget}\Repo\server")
                 .CopyDirectory($@"{deploymentSource}\AzureFunctions.AngularClient", $@"{deploymentTempTarget}\Repo\AzureFunctions.AngularClient")
                 .ChangeDirectory($@"{deploymentTempTarget}\Repo\server")
