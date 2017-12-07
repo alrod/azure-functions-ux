@@ -50,7 +50,7 @@ namespace Deploy
             const string deploymentSource = @"D:\home\site\repository";
             const string deploymentTarget = @"D:\home\site\wwwroot";
             var deploymentTempTarget = GetTempFolder();
-            const string toolsDirectory = $@"D:\home\tools";
+            const string toolsDirectory = @"D:\home\tools";
             const string ng = @"node_modules\.bin\ng";
             var yarn = Path.Combine(toolsDirectory, "yarn");
             var gulp = Path.Combine(toolsDirectory, "gulp");
