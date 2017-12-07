@@ -66,7 +66,7 @@ namespace Deploy
                 .StandardDeployment
                 .Call("npm", $"config set prefix {toolsDirectory}")
                 .Call("npm", "install -g yarn")
-                .Call("npm", "install -g gulpjs/gulp#4.0")
+                .Call("npm", "install -g gulp")
                 .ChangeDirectory($@"{deploymentSource}\server")
                 .Call(yarn, "install", tries: 2)
                 .Call(gulp, "build-production", tries: 2)
