@@ -56,7 +56,7 @@ gulp.task('resources-clean', function() {
  *   Bundle Up production server views
  */
 gulp.task('bundle-views', function() {
-    return gulp.src(['src/**/*.pug', 'src/**/*.css']).pipe(gulp.dest('build'));
+    return gulp.src(['src/**/*.pug', 'src/**/*.css']).pipe(gulp.dest('build/src'));
 });
 
 /********
