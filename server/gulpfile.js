@@ -1,5 +1,5 @@
 const gulp = require('gulp');
-const resx2 = require('gulp-resx2');
+var resxConverter = require('gulp-resx-convert');
 const rename = require('gulp-rename');
 const gulpMerge = require('merge-stream');
 const jeditor = require('gulp-json-editor');
@@ -118,7 +118,11 @@ gulp.task('resx-to-typescript-models', function() {
 gulp.task('resources-convert', function() {
     const portalResourceStream = gulp
         .src(['../AzureFunctions/ResourcesPortal/**/Resources.resx'])
-        .pipe(resx2())
+        .pipe(
+            resxConverter.convert({
+                json: {}
+            })
+        )
         .pipe(
             rename(function(p) {
                 const language = p.dirname.split(path.sep)[0];
@@ -133,7 +137,11 @@ gulp.task('resources-convert', function() {
 
     const templateResourceStream = gulp
         .src(['templates/**/Resources/**/Resources.resx'])
-        .pipe(resx2())
+        .pipe(
+            resxConverter.convert({
+                json: {}
+            })
+        )
         .pipe(
             rename(function(p) {
                 const parts = p.dirname.split(path.sep);
