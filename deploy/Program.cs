@@ -54,7 +54,7 @@ namespace Deploy
             const string ng = @"node_modules\.bin\ng";
             var yarn = Path.Combine(toolsDirectory, "yarn");
             var gulp = Path.Combine(toolsDirectory, "gulp");
-            //var tsc =  @"node_modules\.bin\tsc";
+            var tsc =  @"node_modules\.bin\tsc";
             var assets = Path.Combine(deploymentSource, @"AzureFunctions.AngularClient\src\assets");
 
             DeploySdk
@@ -62,10 +62,12 @@ namespace Deploy
                 .Call("npm", $"config set prefix {toolsDirectory}")
                 .Call("npm", "install -g yarn")
                 .Call("npm", "install -g gulp")
+                .Call("npm", "install -g typescript")
                 .CopyDirectory($@"{deploymentSource}", $@"{deploymentTempTarget}\Repo")
                 .ChangeDirectory($@"{deploymentTempTarget}\Repo\server")
                 .Call(yarn, "install", tries: 2)
-                .Call(gulp, "build-production", tries: 2) 
+                .Call(tsc, "--sourceMap false")
+                .Call(yarn, "install", tries: 2)                
                 .CopyDirectory($@"{deploymentTempTarget}\Repo\server\build",  $@"{deploymentTempTarget}\bin")
                 .ChangeDirectory($@"{deploymentTempTarget}\Repo\AzureFunctions.AngularClient")
                 .Call(yarn, "install", tries: 2)
