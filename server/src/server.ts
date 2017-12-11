@@ -39,7 +39,7 @@ const renderIndex = (_: express.Request, res: express.Response) => {
 app.get('/', maybeAuthenticate, renderIndex);
 
 app.get('/api/ping', (_, res) => {
-    res.send('success');
+    res.send('success nodejs');
 });
 
 app.get('/api/health', (_, res) => {
