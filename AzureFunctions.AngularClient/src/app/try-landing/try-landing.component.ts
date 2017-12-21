@@ -7,7 +7,7 @@ import { Subject } from 'rxjs/Subject';
 import { TranslateService } from '@ngx-translate/core';
 import { Site } from './../shared/models/arm/site';
 import { ArmObj } from './../shared/models/arm/arm-obj';
-import { ErrorIds } from './../shared/models/error-ids';
+import { errorIds } from './../shared/models/error-ids';
 import { TryFunctionsService } from '../shared/services/try-functions.service';
 import { BroadcastService } from '../shared/services/broadcast.service';
 import { UserService } from '../shared/services/user.service';
@@ -175,7 +175,7 @@ export class TryLandingComponent extends ErrorableComponent implements OnInit, O
                                     this.showComponentError({
                                         message: `${this._translateService.instant(PortalResources.tryLanding_functionError)}`,
                                         details: `${this._translateService.instant(PortalResources.tryLanding_functionErrorDetails)}: ${JSON.stringify(error)}`,
-                                        errorId: ErrorIds.tryAppServiceError,
+                                        errorId: errorIds.tryAppServiceError,
                                         resourceId: 'try-app'
                                     });
                                     this.clearBusyState();
@@ -187,7 +187,7 @@ export class TryLandingComponent extends ErrorableComponent implements OnInit, O
                         this.showComponentError({
                             message: `${this._translateService.instant(PortalResources.tryLanding_functionError)}`,
                             details: `${this._translateService.instant(PortalResources.tryLanding_functionErrorDetails)}: ${JSON.stringify(e)}`,
-                            errorId: ErrorIds.tryAppServiceError,
+                            errorId: errorIds.tryAppServiceError,
                             resourceId: 'try-app'
                         });
                         throw e;
@@ -246,7 +246,7 @@ export class TryLandingComponent extends ErrorableComponent implements OnInit, O
                     this.showComponentError({
                         message: `${this._translateService.instant(PortalResources.tryLanding_functionError)}`,
                         details: `${this._translateService.instant(PortalResources.tryLanding_functionErrorDetails)}: ${JSON.stringify(res.error)}`,
-                        errorId: ErrorIds.tryAppServiceError,
+                        errorId: errorIds.tryAppServiceError,
                         resourceId: 'try-app'
                     });
                 }

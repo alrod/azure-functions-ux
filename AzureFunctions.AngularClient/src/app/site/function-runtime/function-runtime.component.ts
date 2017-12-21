@@ -12,7 +12,7 @@ import 'rxjs/add/operator/retry';
 import 'rxjs/add/operator/switchMap';
 import 'rxjs/add/observable/zip';
 import { TranslateService } from '@ngx-translate/core';
-import { ErrorIds } from './../../shared/models/error-ids';
+import { errorIds } from './../../shared/models/error-ids';
 import { CacheService } from './../../shared/services/cache.service';
 import { Site } from './../../shared/models/arm/site';
 import { ArmObj } from './../../shared/models/arm/arm-obj';
@@ -171,7 +171,7 @@ export class FunctionRuntimeComponent extends ViewInfoComponent {
                 this._busyManager.clearBusy();
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.error_unableToUpdateFunctionAppEditMode),
-                    errorId: ErrorIds.unableToUpdateFunctionAppEditMode,
+                    errorId: errorIds.unableToUpdateFunctionAppEditMode,
                     resourceId: this.context.site.id
                 });
             })

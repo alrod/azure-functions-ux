@@ -22,7 +22,7 @@ import { AppNode } from '../tree-view/app-node';
 import { RequiredValidator } from '../shared/validators/requiredValidator';
 import { PortalResources } from '../shared/models/portal-resources';
 import { SlotNameValidator } from '../shared/validators/slotNameValidator';
-import { ErrorIds } from '../shared/models/error-ids';
+import { errorIds } from '../shared/models/error-ids';
 import { AuthzService } from '../shared/services/authz.service';
 import { FunctionAppService } from 'app/shared/services/function-app.service';
 import { Subscription } from 'rxjs/Subscription';
@@ -176,10 +176,10 @@ export class SlotNewComponent extends BaseFunctionComponent implements OnDestroy
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
                     details: this._translateService.instant(PortalResources.slotNew_startCreateFailureNotifyTitle).format(newSlotName),
-                    errorId: ErrorIds.failedToCreateSlot,
+                    errorId: errorIds.failedToCreateSlot,
                     resourceId: this._siteObj.id
                 });
-                this._aiService.trackEvent(ErrorIds.failedToCreateApp, { error: err, id: this._siteObj.id });
+                this._aiService.trackEvent(errorIds.failedToCreateApp, { error: err, id: this._siteObj.id });
             });
     }
 }

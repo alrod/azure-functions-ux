@@ -1,6 +1,6 @@
 import { EditModeHelper } from './../shared/Utilities/edit-mode.helper';
 import { Observable } from 'rxjs/Observable';
-import { ErrorIds } from './../shared/models/error-ids';
+import { errorIds } from './../shared/models/error-ids';
 import { Component, OnDestroy, Output, EventEmitter, ViewChild, ViewChildren, ElementRef, QueryList, OnInit } from '@angular/core';
 import { FunctionInfo } from '../shared/models/function-info';
 import { PortalService } from '../shared/services/portal.service';
@@ -109,11 +109,11 @@ export class FunctionIntegrateComponent extends BaseFunctionComponent implements
                         this._globalStateService.clearBusyState();
                         this._broadcastService.broadcast(BroadcastEvent.FunctionUpdated, this._selectedFunction);
                     });
-                this._broadcastService.broadcast<string>(BroadcastEvent.ClearError, ErrorIds.errorParsingConfig);
+                this._broadcastService.broadcast<string>(BroadcastEvent.ClearError, errorIds.errorParsingConfig);
             } catch (e) {
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.errorParsingConfig, { error: e }),
-                    errorId: ErrorIds.errorParsingConfig,
+                    errorId: errorIds.errorParsingConfig,
                     resourceId: this.context.site.id
                 });
             }

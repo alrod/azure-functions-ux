@@ -10,7 +10,7 @@ import { PortalService } from '../shared/services/portal.service';
 import { GlobalStateService } from '../shared/services/global-state.service';
 import { TranslateService } from '@ngx-translate/core';
 import { PortalResources } from '../shared/models/portal-resources';
-import { ErrorIds } from '../shared/models/error-ids';
+import { errorIds } from '../shared/models/error-ids';
 import { FunctionsNode } from '../tree-view/functions-node';
 import { DashboardType } from '../tree-view/models/dashboard-type';
 import { TreeViewInfo } from '../tree-view/models/tree-view-info';
@@ -63,7 +63,7 @@ export class FunctionIntegrateV2Component extends BaseFunctionComponent {
                             Observable.of(view));
                     } catch (e) {
                         this.onEditorChange('advanced');
-                        return Observable.of(false);
+                        return Observable.of([]);
                     }
                 } else {
                     return Observable.zip(
@@ -79,7 +79,7 @@ export class FunctionIntegrateV2Component extends BaseFunctionComponent {
                 this.currentBinding = null;
                 this.currentBindingId = '';
 
-                if (tuple) {
+                if (tuple && tuple.length > 0) {
                     const bindings = tuple[0];
                     const viewInfo = tuple[2];
                     this.context = viewInfo.context;
@@ -178,11 +178,11 @@ export class FunctionIntegrateV2Component extends BaseFunctionComponent {
 
         try {
             this.updateFunction();
-            this._broadcastService.broadcast<string>(BroadcastEvent.ClearError, ErrorIds.errorParsingConfig);
+            this._broadcastService.broadcast<string>(BroadcastEvent.ClearError, errorIds.errorParsingConfig);
         } catch (e) {
             this.showComponentError({
                 message: this._translateService.instant(PortalResources.errorParsingConfig, { error: e }),
-                errorId: ErrorIds.errorParsingConfig,
+                errorId: errorIds.errorParsingConfig,
                 resourceId: this.context.site.id
             });
             this.onRemoveBinding(binding);

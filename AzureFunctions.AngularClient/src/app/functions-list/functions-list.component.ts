@@ -1,7 +1,7 @@
 import { FunctionAppContext } from './../shared/function-app-context';
 import { SiteDescriptor } from 'app/shared/resourceDescriptors';
 import { DashboardType } from 'app/tree-view/models/dashboard-type';
-import { ErrorIds } from './../shared/models/error-ids';
+import { errorIds } from './../shared/models/error-ids';
 import { BroadcastService } from './../shared/services/broadcast.service';
 import { AppNode } from './../tree-view/app-node';
 import { Component, OnDestroy } from '@angular/core';
@@ -81,7 +81,7 @@ export class FunctionsListComponent extends NavigableComponent implements OnDest
                 const state = item.functionInfo.config.disabled ? this._translateService.instant(PortalResources.enable) : this._translateService.instant(PortalResources.disable);
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.failedToSwitchFunctionState, { state: state, functionName: item.functionInfo.name }),
-                    errorId: ErrorIds.failedToSwitchEnabledFunction,
+                    errorId: errorIds.failedToSwitchEnabledFunction,
                     resourceId: this.context.site.id
                 });
                 this._globalStateService.clearBusyState();

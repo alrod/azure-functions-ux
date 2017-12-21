@@ -5,7 +5,7 @@ import { SlotsNode } from '../tree-view/slots-node';
 import { SlotNode } from '../tree-view/app-node';
 import { BroadcastService } from '../shared/services/broadcast.service';
 import { PortalResources } from '../shared/models/portal-resources';
-import { ErrorIds } from '../shared/models/error-ids';
+import { errorIds } from '../shared/models/error-ids';
 import { NavigableComponent } from '../shared/components/navigable-component';
 import { Subscription } from 'rxjs/Subscription';
 
@@ -45,7 +45,7 @@ export class SlotsListComponent extends NavigableComponent {
                 this.isLoading = false;
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.error_unableToLoadSlotsList),
-                    errorId: ErrorIds.unableToPopulateSlotsList,
+                    errorId: errorIds.unableToPopulateSlotsList,
                     resourceId: 'none'
                 });
             })

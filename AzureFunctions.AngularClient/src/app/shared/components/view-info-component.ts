@@ -35,6 +35,7 @@ export abstract class ViewInfoComponent extends ErrorableComponent implements On
         this.viewInfoSubject = new Subject();
         this.viewInfoEvents = this.viewInfoSubject
             .takeUntil(this.ngUnsubscribe)
+            .filter(view => !!view)
             .map(view => {
                 let siteDescriptor: SiteDescriptor | null;
                 let functionDescriptor: FunctionDescriptor | null;

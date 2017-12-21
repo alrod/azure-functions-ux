@@ -14,7 +14,7 @@ import { PortalService } from '../shared/services/portal.service';
 import { BindingManager } from '../shared/models/binding-manager';
 import { GlobalStateService } from '../shared/services/global-state.service';
 import { PortalResources } from '../shared/models/portal-resources';
-import { ErrorIds } from '../shared/models/error-ids';
+import { errorIds } from '../shared/models/error-ids';
 import { FunctionsNode } from '../tree-view/functions-node';
 import { TreeViewInfo } from '../tree-view/models/tree-view-info';
 import { DashboardType } from '../tree-view/models/dashboard-type';
@@ -130,11 +130,11 @@ export class FunctionQuickstartComponent extends ViewInfoComponent {
                         } catch (e) {
                             this.showComponentError({
                                 message: this._translateService.instant(PortalResources.functionCreateErrorDetails, { error: JSON.stringify(e) }),
-                                errorId: ErrorIds.unableToCreateFunction,
+                                errorId: errorIds.unableToCreateFunction,
                                 resourceId: this.context.site.id
                             });
 
-                            this._aiService.trackEvent(ErrorIds.unableToCreateFunction, {
+                            this._aiService.trackEvent(errorIds.unableToCreateFunction, {
                                 exception: e
                             });
                             throw e;

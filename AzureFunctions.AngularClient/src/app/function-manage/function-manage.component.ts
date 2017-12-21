@@ -17,13 +17,14 @@ import { PortalService } from '../shared/services/portal.service';
 import { GlobalStateService } from '../shared/services/global-state.service';
 import { PortalResources } from '../shared/models/portal-resources';
 import { BindingManager } from '../shared/models/binding-manager';
-import { ErrorIds } from './../shared/models/error-ids';
+import { errorIds } from './../shared/models/error-ids';
 import { Subscription } from 'rxjs/Subscription';
 import { Observable } from 'rxjs/Observable';
 import { FunctionAppService } from 'app/shared/services/function-app.service';
 import { TreeViewInfo } from 'app/tree-view/models/tree-view-info';
 import { TreeNode } from 'app/tree-view/tree-node';
 import { NavigableComponent } from '../shared/components/navigable-component';
+import { DashboardType } from '../tree-view/models/dashboard-type';
 
 @Component({
     selector: 'function-manage',
@@ -47,7 +48,7 @@ export class FunctionManageComponent extends NavigableComponent {
         private _broadcastService: BroadcastService,
         configService: ConfigService) {
 
-        super('function-manage', _broadcastService);
+        super('function-manage', _broadcastService, DashboardType.FunctionManageDashboard);
 
         this.isStandalone = configService.isStandalone();
 
@@ -77,7 +78,7 @@ export class FunctionManageComponent extends NavigableComponent {
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.failedToSwitchFunctionState,
                         { state: !this.functionInfo.config.disabled, functionName: this.functionInfo.name }),
-                    errorId: ErrorIds.failedToSwitchEnabledFunction,
+                    errorId: errorIds.failedToSwitchEnabledFunction,
                     resourceId: this.context.site.id
                 });
                 console.error(e);
@@ -102,7 +103,7 @@ export class FunctionManageComponent extends NavigableComponent {
                 Observable.of(view)
             ))
             .switchMap(tuple => Observable.zip(
-                this._functionAppService.getRuntimeGeneration(this.context),
+                this._functionAppService.getRuntimeGeneration(tuple[0]),
                 this._functionAppService.getFunction(tuple[0], tuple[1].functionDescriptor.name),
                 Observable.of(tuple[0]),
                 Observable.of(tuple[1])

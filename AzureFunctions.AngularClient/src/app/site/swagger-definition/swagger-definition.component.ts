@@ -20,7 +20,7 @@ import { SelectOption } from '../../shared/models/select-option';
 import { PortalService } from '../../shared/services/portal.service';
 import { PortalResources } from '../../shared/models/portal-resources';
 import { BroadcastService } from '../../shared/services/broadcast.service';
-import { ErrorIds } from '../../shared/models/error-ids';
+import { errorIds } from '../../shared/models/error-ids';
 import { CacheService } from '../../shared/services/cache.service';
 import { TreeViewInfo, SiteData } from './../../tree-view/models/tree-view-info';
 import { FunctionAppService } from 'app/shared/services/function-app.service';
@@ -293,7 +293,7 @@ export class SwaggerDefinitionComponent extends ViewInfoComponent implements OnD
             if (error) {
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.swaggerDefinition_prompt),
-                    errorId: ErrorIds.malformedAPIDefinition,
+                    errorId: errorIds.malformedAPIDefinition,
                     resourceId: this.context.site.id
                 });
 

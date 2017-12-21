@@ -2,7 +2,7 @@ import { AiService } from 'app/shared/services/ai.service';
 import { FunctionAppService } from 'app/shared/services/function-app.service';
 import { BroadcastService } from './../shared/services/broadcast.service';
 import { FunctionAppContext } from 'app/shared/function-app-context';
-import { ErrorIds } from './../shared/models/error-ids';
+import { errorIds } from './../shared/models/error-ids';
 import { PortalResources } from './../shared/models/portal-resources';
 import { ViewInfoComponent } from 'app/shared/components/view-info-component';
 import { TranslateService } from '@ngx-translate/core';
@@ -22,11 +22,11 @@ export abstract class BaseExtensionInstallComponent extends ViewInfoComponent {
     showTimeoutError(context: FunctionAppContext) {
         this.showComponentError({
             message: this._translateService.instant(PortalResources.timeoutInstallingFunctionRuntimeExtension),
-            errorId: ErrorIds.timeoutInstallingFunctionRuntimeExtension,
+            errorId: errorIds.timeoutInstallingFunctionRuntimeExtension,
             resourceId: context.site.id
         });
 
-        this._aiService.trackEvent(ErrorIds.timeoutInstallingFunctionRuntimeExtension, {
+        this._aiService.trackEvent(errorIds.timeoutInstallingFunctionRuntimeExtension, {
             content: this._translateService.instant(PortalResources.timeoutInstallingFunctionRuntimeExtension)
         });
     }
@@ -34,11 +34,11 @@ export abstract class BaseExtensionInstallComponent extends ViewInfoComponent {
     showInstallFailed(context: FunctionAppContext, id) {
         this.showComponentError({
             message: this._translateService.instant(PortalResources.failedToInstallFunctionRuntimeExtensionForId, { installationId: id }),
-            errorId: ErrorIds.timeoutInstallingFunctionRuntimeExtension,
+            errorId: errorIds.timeoutInstallingFunctionRuntimeExtension,
             resourceId: context.site.id
         });
 
-        this._aiService.trackEvent(ErrorIds.timeoutInstallingFunctionRuntimeExtension, {
+        this._aiService.trackEvent(errorIds.timeoutInstallingFunctionRuntimeExtension, {
             content: this._translateService.instant(PortalResources.failedToInstallFunctionRuntimeExtension)
         });
     }

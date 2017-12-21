@@ -9,7 +9,7 @@ import { AADPermissions, AADRegistrationInfo, AADDescriptionDescriptions } from 
 import { PortalService } from '../shared/services/portal.service';
 import { GlobalStateService } from '../shared/services/global-state.service';
 import { BroadcastService } from '../shared/services/broadcast.service';
-import { ErrorIds } from './../shared/models/error-ids';
+import { errorIds } from './../shared/models/error-ids';
 import { BehaviorSubject } from 'rxjs/BehaviorSubject';
 import { Subscription } from 'rxjs/Subscription';
 
@@ -131,7 +131,7 @@ export class AadRegistrationComponent extends ViewInfoComponent implements OnIni
         this._aiService.trackException(err, message);
         this.showComponentError({
             message: `${message}: ${JSON.stringify(err)}`,
-            errorId: ErrorIds.failedAadRegistration,
+            errorId: errorIds.failedAadRegistration,
             resourceId: 'none'
         });
     }

@@ -4,6 +4,7 @@ import { Preconditions as p } from './preconditions';
 import { CacheService } from 'app/shared/services/cache.service';
 import { Observable } from 'rxjs/Observable';
 import { FunctionAppHttpResult } from 'app/shared/models/function-app-http-result';
+import { LogService } from './services/log.service';
 
 type AuthenticatedQuery<T> = (t: AuthToken) => Observable<T>;
 type Query<T> = Observable<T> | AuthenticatedQuery<T>;
@@ -20,16 +21,15 @@ export class ConditionalHttpClient {
     private readonly preconditionsMap: p.PreconditionMap = {} as p.PreconditionMap;
     private readonly conditions: p.HttpPreconditions[];
 
-    constructor(cacheService: CacheService, private getToken: (context: FunctionAppContext) => Observable<string>, ...defaultConditions: p.HttpPreconditions[]) {
+    constructor(cacheService: CacheService, logService: LogService, private getToken: (context: FunctionAppContext) => Observable<string>, ...defaultConditions: p.HttpPreconditions[]) {
 
         this.conditions = defaultConditions;
 
-        this.preconditionsMap['NoClientCertificate'] = new p.NoClientCertificatePrecondition(cacheService);
-        this.preconditionsMap['NoEasyAuth'] = new p.NoEasyAuthPrecondition(cacheService);
-        this.preconditionsMap['NotOverQuota'] = new p.NotOverQuotaPrecondition(cacheService);
-        this.preconditionsMap['NotStopped'] = new p.NotStoppedPrecondition(cacheService);
-        this.preconditionsMap['ReachableLoadballancer'] = new p.ReachableLoadballancerPrecondition(cacheService);
-        this.preconditionsMap['RuntimeAvailable'] = new p.RuntimeAvailablePrecondition(cacheService);
+        this.preconditionsMap['NoClientCertificate'] = new p.NoClientCertificatePrecondition(cacheService, logService);
+        this.preconditionsMap['NotOverQuota'] = new p.NotOverQuotaPrecondition(cacheService, logService);
+        this.preconditionsMap['NotStopped'] = new p.NotStoppedPrecondition(cacheService, logService);
+        this.preconditionsMap['ReachableLoadballancer'] = new p.ReachableLoadballancerPrecondition(cacheService, logService);
+        this.preconditionsMap['RuntimeAvailable'] = new p.RuntimeAvailablePrecondition(cacheService, logService, getToken);
     }
 
     execute<T>(context: FunctionAppContext, query: Query<T>, executeOptions?: ExecuteOptions) {

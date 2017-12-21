@@ -94,7 +94,7 @@ export class BindingComponent extends ViewInfoComponent implements OnDestroy {
 
         this._subscription = this._broadcastService.subscribe<FunctionAppContext>(BroadcastEvent.IntegrateChanged, context => {
             setTimeout(() => {
-                if (context.site.id === this.context.site.id) {
+                if (context && this.context && context.site.id === this.context.site.id) {
                     this.isDirty = this.model.isDirty() || (this.bindingValue && this.bindingValue.newBinding);
                     if (this.isDirty === undefined) {
                         this.isDirty = false;
@@ -121,6 +121,7 @@ export class BindingComponent extends ViewInfoComponent implements OnDestroy {
                 Observable.of(viewInfo)
             ))
             .subscribe(tuple => {
+                this.viewInfo = tuple[1];
                 this.context = tuple[1].context;
                 this._functionInfo = tuple[1].functionInfo.result;
                 this._appSettings = tuple[0].isSuccessful

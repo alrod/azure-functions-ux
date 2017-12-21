@@ -102,7 +102,7 @@ export class BindingV2Component extends ViewInfoComponent {
         this._broadcastService.getEvents<FunctionAppContext>(BroadcastEvent.IntegrateChanged)
             .takeUntil(this.ngUnsubscribe)
             .subscribe(context => {
-                if (context.site.id === this.context.site.id) {
+                if (context && this.context && context.site.id === this.context.site.id) {
                     this.isDirty = this.model.isDirty() || (this.bindingValue && this.bindingValue.newBinding);
                     if (this.isDirty === undefined) {
                         this.isDirty = false;

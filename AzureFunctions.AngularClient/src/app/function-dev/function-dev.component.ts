@@ -30,7 +30,7 @@ import { TutorialEvent, TutorialStep } from '../shared/models/tutorial';
 import { MonacoEditorDirective } from '../shared/directives/monaco-editor.directive';
 import { BindingManager } from '../shared/models/binding-manager';
 import { RunHttpComponent } from '../run-http/run-http.component';
-import { ErrorIds } from '../shared/models/error-ids';
+import { errorIds } from '../shared/models/error-ids';
 import { HttpRunModel } from '../shared/models/http-run';
 import { FunctionKeys } from '../shared/models/function-key';
 import { MonacoHelper } from '../shared/Utilities/monaco.helper';
@@ -403,12 +403,12 @@ export class FunctionDevComponent extends ViewInfoComponent implements AfterView
         if (this.scriptFile.href.toLocaleLowerCase() === this.functionInfo.config_href.toLocaleLowerCase()) {
             try {
                 JSON.parse(this.updatedContent);
-                this._broadcastService.broadcast<string>(BroadcastEvent.ClearError, ErrorIds.errorParsingConfig);
+                this._broadcastService.broadcast<string>(BroadcastEvent.ClearError, errorIds.errorParsingConfig);
                 syncTriggers = true;
             } catch (e) {
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.errorParsingConfig, { error: e }),
-                    errorId: ErrorIds.errorParsingConfig,
+                    errorId: errorIds.errorParsingConfig,
                     resourceId: this.context.site.id
                 });
                 return null;

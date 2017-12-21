@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs/Observable';
 import { Subject } from 'rxjs/Subject';
-import { ErrorIds } from './../shared/models/error-ids';
+import { errorIds } from './../shared/models/error-ids';
 import { PortalResources } from './../shared/models/portal-resources';
 import { LogCategories, ScenarioIds, Arm } from './../shared/models/constants';
 import { Subscription } from './../shared/models/subscription';
@@ -82,7 +82,7 @@ export class AppsNode extends TreeNode implements MutableCollection, Disposable,
         this._broadcastService.getEvents<AppNode[]>(BroadcastEvent.UpdateAppsList)
             .subscribe(children => {
                 this.children = children ? children : [];
-            })
+            });
 
         // Always listening for subscription changes
         this._subscriptionsStream
@@ -252,7 +252,7 @@ export class AppsNode extends TreeNode implements MutableCollection, Disposable,
                 this.sideNav.broadcastService.broadcast<ErrorEvent>(BroadcastEvent.Error, {
                     message: err.message,
                     details: err.code,
-                    errorId: ErrorIds.failedToQueryArmResource,
+                    errorId: errorIds.failedToQueryArmResource,
                     resourceId: 'none'
                 });
 

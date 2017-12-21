@@ -30,8 +30,9 @@ import { PortalResources } from 'app/shared/models/portal-resources';
 import { ConditionalHttpClient } from 'app/shared/conditional-http-client';
 import { TranslateService } from '@ngx-translate/core';
 import { ConfigService } from 'app/shared/services/config.service';
-import { ErrorIds } from 'app/shared/models/error-ids';
+import { errorIds } from 'app/shared/models/error-ids';
 import { SiteDescriptor } from '../resourceDescriptors';
+import { LogService } from './log.service';
 
 
 type Result<T> = Observable<FunctionAppHttpResult<T>>;
@@ -43,10 +44,11 @@ export class FunctionAppService {
     constructor(private _cacheService: CacheService,
         private _translateService: TranslateService,
         private _configService: ConfigService,
-        private _userService: UserService) {
+        private _userService: UserService,
+        logService: LogService) {
 
-        this.runtime = new ConditionalHttpClient(_cacheService, context => this.getRuntimeToken(context), 'NoClientCertificate', 'NotOverQuota', 'NotStopped', 'ReachableLoadballancer');
-        this.azure = new ConditionalHttpClient(_cacheService, _ => _userService.getStartupInfo().map(i => i.token), 'NotOverQuota', 'ReachableLoadballancer');
+        this.runtime = new ConditionalHttpClient(_cacheService, logService, context => this.getRuntimeToken(context), 'NoClientCertificate', 'NotOverQuota', 'NotStopped', 'ReachableLoadballancer');
+        this.azure = new ConditionalHttpClient(_cacheService, logService, _ => _userService.getStartupInfo().map(i => i.token), 'NotOverQuota', 'ReachableLoadballancer');
     }
 
     private getRuntimeToken(context: FunctionAppContext): Observable<string> {
@@ -72,7 +74,7 @@ export class FunctionAppService {
                             result: null,
                             isSuccessful: false,
                             error: {
-                                errorId: ErrorIds.functionNotFound
+                                errorId: errorIds.functionNotFound
                             }
                         };
                 } else {

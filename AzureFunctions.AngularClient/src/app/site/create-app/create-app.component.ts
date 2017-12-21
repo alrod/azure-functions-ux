@@ -5,7 +5,7 @@ import { FormBuilder, FormGroup } from '@angular/forms';
 import { CustomFormControl } from './../../controls/click-to-edit/click-to-edit.component';
 import { TranslateService } from '@ngx-translate/core';
 import { Subject } from 'rxjs/Subject';
-import { ErrorIds } from './../../shared/models/error-ids';
+import { errorIds } from './../../shared/models/error-ids';
 import { BroadcastService } from './../../shared/services/broadcast.service';
 import { AiService } from './../../shared/services/ai.service';
 import { ArmObj } from './../../shared/models/arm/arm-obj';
@@ -164,11 +164,11 @@ export class CreateAppComponent extends ErrorableComponent implements OnInit, On
                 this.showComponentError({
                     message: this._translateService.instant(PortalResources.createApp_fail),
                     details: this._translateService.instant(PortalResources.createApp_fail),
-                    errorId: ErrorIds.failedToCreateApp,
+                    errorId: errorIds.failedToCreateApp,
                     resourceId: id
                 });
 
-                this._aiService.trackEvent(ErrorIds.failedToCreateApp, { error: error, id: id });
+                this._aiService.trackEvent(errorIds.failedToCreateApp, { error: error, id: id });
             });
     }
 }
